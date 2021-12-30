@@ -25,9 +25,9 @@ public class PanelController : MonoBehaviour
     private IEnumerator DimmingScene()
     {
         Image image = _resumePanel.GetComponent<Image>();
-        float delta = 0.8f * 1 / 60f;
+        float delta = 0.7f * 1 / 30f;
         float alpha = 0;
-        for (int i = 0; i < 60; i++)
+        for (int i = 0; i < 30; i++)
         {
             alpha += delta;
             image.color = new Color(0, 0, 0, alpha);
