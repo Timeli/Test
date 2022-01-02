@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
 {
+    // ѕрефаб треугольник
     [SerializeField] private GameObject _cellPrefab;
 
     private Cell[,] _cells;
@@ -39,8 +40,9 @@ public class MazeGenerator : MonoBehaviour
         List<Cell> cellList = new List<Cell>();
         Stack<Cell> cellStack = new Stack<Cell>();
         currCell = _cells[0, 0];
+        int iterationCount = _height * _width * 2;
 
-        for (int i = 0; i < 500; i++)
+        for (int i = 0; i < iterationCount - 2; i++)
         {
             // нахожу все непосещенные €чейки вокруг текущей
             GetAllUnvisitedNeighbor(cellList);
@@ -61,7 +63,7 @@ public class MazeGenerator : MonoBehaviour
             // случайн станов текущ
             MakeRoad();
 
-            // добавл€ю случайную в стек
+            // добавл€ю текущ в стек
             cellStack.Push(currCell);
         }
     }
