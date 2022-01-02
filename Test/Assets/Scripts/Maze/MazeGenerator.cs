@@ -5,18 +5,19 @@ using UnityEngine;
 public class MazeGenerator : MonoBehaviour
 {
     [SerializeField] private GameObject _cellPrefab;
-    [SerializeField] private GameObject _obj;
+
     private Cell[,] _cells;
+    Cell currCell = null;
+    Cell nextCell = null;
+
     private readonly int _height = 11;
     private readonly int _width = 16;
-    private int posX = 0;
-    private int posZ = 0;
-    int cntIsActive = 0;
+
     private void Start()
     {
         _cells = new Cell[_height, _width];
         CarcassGenerate();
-        StartCoroutine(MazeGenerate());
+        MazeGenerate();
     }
 
     private void CarcassGenerate()
@@ -33,108 +34,64 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
-    private IEnumerator MazeGenerate()
+    private void MazeGenerate()
     {
         List<Cell> cellList = new List<Cell>();
         Stack<Cell> cellStack = new Stack<Cell>();
+        currCell = _cells[0, 0];
+
+        for (int i = 0; i < 500; i++)
+        {
+            // нахожу все непосещенные ячейки вокруг текущей
+            GetAllUnvisitedNeighbor(cellList);
+
+            // если непосещ нет - беру из стека 
+            if (cellList.Count == 0)
+            {
+                currCell = cellStack.Pop();
+                continue;
+            }
+
+            // выбираю случайную из непосещенных и очищ лист
+            nextCell = cellList[Random.Range(0, cellList.Count)];
+            cellList.Clear();
+
+            // открываю проход от текущей к случайной.
+            // обе ячейки помечаются посещенными.
+            // случайн станов текущ
+            MakeRoad();
+
+            // добавляю случайную в стек
+            cellStack.Push(currCell);
+        }
+    }
+    
+    private void MakeRoad()
+    {
+        if (currCell.X < nextCell.X)
+            currCell.LeftWall.SetActive(false);
+        else if (currCell.Z < nextCell.Z)
+            currCell.BottomWall.SetActive(false);
+        else if (currCell.X > nextCell.X)
+            nextCell.LeftWall.SetActive(false);
+        else if (currCell.Z > nextCell.Z)
+            nextCell.BottomWall.SetActive(false);
+            
+        currCell.IsVisited = true;
+        nextCell.IsVisited = true;
         
-        _cells[0, 0].IsVisited = true;
-
-        while (true)
-        {
-            // ищу непосещ соседей текущ клетки и помещ в лист
-            if (posX - 1 >= 0 && _cells[posZ, posX - 1].IsVisited == false)
-                cellList.Add(_cells[posZ, posX - 1]);
-            if (posX + 1 < _width && _cells[posZ, posX + 1].IsVisited == false)
-                cellList.Add(_cells[posZ, posX + 1]);
-            if (posZ - 1 >= 0 && _cells[posZ - 1, posX].IsVisited == false)
-                cellList.Add(_cells[posZ - 1, posX]);
-            if (posZ + 1 < _height && _cells[posZ + 1, posX].IsVisited == false)
-                cellList.Add(_cells[posZ + 1, posX]);
-
-            // выбир случ клетку из листа и иду в нее
-            // остальные помещ в стек
-            // лист чищу
-            //print("List Count: " + cellList.Count);
-            if (cellList.Count > 0)
-            {
-                int index = Random.Range(0, cellList.Count);
-                //print("Random Index: " + index);
-                Cell cell = cellList[index];
-                OpenDoor(posX, posZ, cell);
-                cellList.RemoveAt(index);
-                for (int i = 0; i < cellList.Count; i++)
-                {
-                    if (cellStack.Contains(cellList[i]) == false)
-                        cellStack.Push(cellList[i]);
-                }
-
-                cellList.Clear();
-                
-                print("Active Cell: " + cntIsActive);
-                posX = cell.X;
-                posZ = cell.Z;
-            }
-            else
-            {
-                if (cellStack.Count > 0)
-                {
-                    Cell cell = cellStack.Pop();
-                    posX = cell.X;
-                    posZ = cell.Z;
-                }
-                else
-                {
-                    print("Break");
-                    break;
-                }
-            }
-            StartCoroutine(Move(new Vector3(posX, 1.1f, posZ)));
-            //print("Current Pos: " + " X: " + posX + " Z: " + posZ);
-            yield return new WaitForSeconds(0.05f);
-        }
+        currCell = nextCell;
     }
-
-    private void OpenDoor(int currentX, int currentZ, Cell next)
+    
+    private void GetAllUnvisitedNeighbor(List<Cell> listCell)
     {
-        Cell prev = _cells[currentZ, currentX];
-        if (prev.X < next.X)
-        {
-            prev.LeftWall.SetActive(false);
-            prev.IsVisited = true;
-        }
-        else if (prev.Z < next.Z)
-        {
-            prev.BottomWall.SetActive(false);
-            prev.IsVisited = true;
-        }
-        else if (prev.X > next.X)
-        {
-            next.LeftWall.SetActive(false);
-            next.IsVisited = true;
-        }
-        else if (prev.Z > next.Z)
-        {
-            next.BottomWall.SetActive(false);
-            next.IsVisited = true;
-        }
-        cntIsActive++;
-
-
+        if (currCell.X - 1 >= 0 && _cells[currCell.Z, currCell.X - 1].IsVisited == false)
+            listCell.Add(_cells[currCell.Z, currCell.X - 1]);
+        if (currCell.X + 1 < _width && _cells[currCell.Z, currCell.X + 1].IsVisited == false)
+            listCell.Add(_cells[currCell.Z, currCell.X + 1]);
+        if (currCell.Z - 1 >= 0 && _cells[currCell.Z - 1, currCell.X].IsVisited == false)
+            listCell.Add(_cells[currCell.Z - 1, currCell.X]);
+        if (currCell.Z + 1 < _height && _cells[currCell.Z + 1, currCell.X].IsVisited == false)
+            listCell.Add(_cells[currCell.Z + 1, currCell.X]);
     }
-
-    private IEnumerator Move(Vector3 vector)
-    {
-        if ((_obj.transform.position - vector).magnitude > 1.1)
-            _obj.transform.position = vector;
-
-        for (int i = 0; i < 5; i++)
-        {
-            _obj.transform.position = Vector3.MoveTowards(_obj.transform.position, vector, 1 / 2.5f);
-            yield return null;
-        }
-    }
-
-  
-       
 }
