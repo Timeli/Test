@@ -16,6 +16,8 @@ public class Player : MonoBehaviour
         _renderer = GetComponent<Renderer>();
     }
 
+    public GameObject thisObj => this.gameObject;
+
     public void InitChangeColor()
     {
         StartCoroutine(ChangeColor());
